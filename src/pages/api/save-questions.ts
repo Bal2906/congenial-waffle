@@ -28,7 +28,7 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'Error al conectar o guardar en la Base de Datos' 
+        error: error.message || String(error) || 'Error al conectar o guardar en la Base de Datos' 
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

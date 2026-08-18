@@ -20,6 +20,8 @@ export function getSql() {
 // Helper to ensure database table & unique indexes exist
 export async function initDb() {
   const sql = getSql();
+  
+  // 1. Create questions table
   await sql`
     CREATE TABLE IF NOT EXISTS questions (
       id SERIAL PRIMARY KEY,
@@ -30,11 +32,15 @@ export async function initDb() {
     );
   `;
 
-  // B-Tree unique index for fast O(log N) deduplication
-  await sql`
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_questions_normalized_text 
-    ON questions (lower(trim(question)));
-  `;
+  // 2. Create expression index with proper PostgreSQL double parentheses: ((lower(trim(question))))
+  try {
+    await sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_questions_normalized_text 
+      ON questions ((lower(trim(question))));
+    `;
+  } catch (err) {
+    console.warn('Index creation notice:', err);
+  }
 }
 
 export interface QuestionInput {
@@ -91,11 +97,11 @@ export async function saveQuestionsToDb(questions: QuestionInput[]) {
       const inserted = await sql`
         INSERT INTO questions (question, correct_answer, source_file)
         VALUES (${cleanQ}, ${cleanA}, ${source})
-        ON CONFLICT (lower(trim(question))) DO NOTHING
-        RETURNING lower(trim(question)) as norm_q;
+        ON CONFLICT ((lower(trim(question)))) DO NOTHING
+        RETURNING id;
       `;
 
-      if (inserted.length > 0) {
+      if (inserted && inserted.length > 0) {
         insertedCount++;
       } else {
         skippedDbCount++;
@@ -105,14 +111,34 @@ export async function saveQuestionsToDb(questions: QuestionInput[]) {
         });
       }
     } catch (err: any) {
-      if (err.code === '23505') {
+      if (err.code === '23505' || err.message?.includes('duplicate key') || err.message?.includes('unique constraint')) {
         skippedDbCount++;
         dbSkippedItems.push({
           question: cleanQ,
           reason: 'Ya existía previamente en la Base de Datos'
         });
       } else {
-        throw err;
+        // Fallback SELECT check if ON CONFLICT syntax differs
+        try {
+          const existing = await sql`
+            SELECT id FROM questions WHERE lower(trim(question)) = lower(trim(${cleanQ})) LIMIT 1;
+          `;
+          if (existing && existing.length > 0) {
+            skippedDbCount++;
+            dbSkippedItems.push({
+              question: cleanQ,
+              reason: 'Ya existía previamente en la Base de Datos'
+            });
+          } else {
+            await sql`
+              INSERT INTO questions (question, correct_answer, source_file)
+              VALUES (${cleanQ}, ${cleanA}, ${source});
+            `;
+            insertedCount++;
+          }
+        } catch (innerErr: any) {
+          console.error('Error inserting item:', cleanQ, innerErr);
+        }
       }
     }
   }
