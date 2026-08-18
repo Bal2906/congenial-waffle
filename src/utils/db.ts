@@ -1,23 +1,25 @@
-import postgres from 'postgres';
+import { neon } from '@neondatabase/serverless';
 
-const connectionString = (typeof process !== 'undefined' && process.env.DATABASE_URL)
-  ? process.env.DATABASE_URL
-  : (import.meta.env.DATABASE_URL || '');
-
-if (!connectionString) {
-  console.warn('⚠️ ADVERTENCIA: No se encontró la variable DATABASE_URL en el archivo .env o en el entorno.');
+function getConnectionString(): string {
+  if (typeof process !== 'undefined' && process.env && process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+  try {
+    if (import.meta.env && import.meta.env.DATABASE_URL) {
+      return import.meta.env.DATABASE_URL;
+    }
+  } catch {}
+  return 'postgresql://neondb_owner:npg_RU6Kk2hmrxGV@ep-mute-butterfly-ac59udqd-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require';
 }
 
-// Initialize postgres client connection
-export const sql = postgres(connectionString, {
-  ssl: 'require',
-  max: 10,
-  idle_timeout: 20,
-  connect_timeout: 10
-});
+export function getSql() {
+  const connStr = getConnectionString();
+  return neon(connStr);
+}
 
 // Helper to ensure database table & unique indexes exist
 export async function initDb() {
+  const sql = getSql();
   await sql`
     CREATE TABLE IF NOT EXISTS questions (
       id SERIAL PRIMARY KEY,
@@ -43,8 +45,9 @@ export interface QuestionInput {
 
 export async function saveQuestionsToDb(questions: QuestionInput[]) {
   await initDb();
+  const sql = getSql();
 
-  // Pre-deduplicate in Node.js RAM (O(N) time)
+  // 1. Pre-deduplicate in Node.js RAM (O(N) time)
   const uniqueInBatch = new Map<string, QuestionInput>();
   const inBatchDuplicates: { question: string; reason: string }[] = [];
 
@@ -70,52 +73,55 @@ export async function saveQuestionsToDb(questions: QuestionInput[]) {
     return {
       insertedCount: 0,
       skippedCount: inBatchDuplicates.length,
-      totalInDb: countResult[0]?.total || 0,
+      totalInDb: Number(countResult[0]?.total || 0),
       skippedItems: inBatchDuplicates
     };
   }
 
-  // Bulk Insert in chunks of 500
-  const CHUNK_SIZE = 500;
   let insertedCount = 0;
   let skippedDbCount = 0;
   const dbSkippedItems: { question: string; reason: string }[] = [];
 
-  for (let i = 0; i < itemsToInsert.length; i += CHUNK_SIZE) {
-    const chunk = itemsToInsert.slice(i, i + CHUNK_SIZE);
+  for (const item of itemsToInsert) {
+    const cleanQ = item.question.trim();
+    const cleanA = item.correctAnswer.trim();
+    const source = (item.sourceFile || 'manual_upload').trim();
 
-    const rows = chunk.map(q => ({
-      question: q.question.trim(),
-      correct_answer: q.correctAnswer.trim(),
-      source_file: (q.sourceFile || 'manual_upload').trim()
-    }));
+    try {
+      const inserted = await sql`
+        INSERT INTO questions (question, correct_answer, source_file)
+        VALUES (${cleanQ}, ${cleanA}, ${source})
+        ON CONFLICT (lower(trim(question))) DO NOTHING
+        RETURNING lower(trim(question)) as norm_q;
+      `;
 
-    const inserted = await sql`
-      INSERT INTO questions ${sql(rows, 'question', 'correct_answer', 'source_file')}
-      ON CONFLICT (lower(trim(question))) DO NOTHING
-      RETURNING lower(trim(question)) as norm_q;
-    `;
-
-    const insertedNormSet = new Set(inserted.map(r => r.norm_q));
-    insertedCount += inserted.length;
-
-    chunk.forEach(item => {
-      const normKey = item.question.trim().toLowerCase();
-      if (!insertedNormSet.has(normKey)) {
+      if (inserted.length > 0) {
+        insertedCount++;
+      } else {
         skippedDbCount++;
         dbSkippedItems.push({
-          question: item.question,
+          question: cleanQ,
           reason: 'Ya existía previamente en la Base de Datos'
         });
       }
-    });
+    } catch (err: any) {
+      if (err.code === '23505') {
+        skippedDbCount++;
+        dbSkippedItems.push({
+          question: cleanQ,
+          reason: 'Ya existía previamente en la Base de Datos'
+        });
+      } else {
+        throw err;
+      }
+    }
   }
 
   const skippedCount = inBatchDuplicates.length + skippedDbCount;
   const allSkipped = [...inBatchDuplicates, ...dbSkippedItems];
 
   const countResult = await sql`SELECT count(*)::int as total FROM questions;`;
-  const totalInDb = countResult[0]?.total || 0;
+  const totalInDb = Number(countResult[0]?.total || 0);
 
   return {
     insertedCount,
@@ -127,22 +133,24 @@ export async function saveQuestionsToDb(questions: QuestionInput[]) {
 
 export async function getAllQuestionsFromDb(): Promise<QuestionInput[]> {
   await initDb();
+  const sql = getSql();
   const rows = await sql`
     SELECT question, correct_answer as "correctAnswer", source_file as "sourceFile" 
     FROM questions 
     ORDER BY id ASC;
   `;
   return rows.map(r => ({
-    question: r.question,
-    correctAnswer: r.correctAnswer,
-    sourceFile: r.sourceFile || 'Neon DB'
+    question: r.question as string,
+    correctAnswer: r.correctAnswer as string,
+    sourceFile: (r.sourceFile as string) || 'Neon DB'
   }));
 }
 
 export async function getDbStats() {
   await initDb();
+  const sql = getSql();
   const countResult = await sql`SELECT count(*)::int as total FROM questions;`;
   return {
-    totalInDb: countResult[0]?.total || 0
+    totalInDb: Number(countResult[0]?.total || 0)
   };
 }

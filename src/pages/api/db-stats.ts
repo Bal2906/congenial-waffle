@@ -9,9 +9,10 @@ export const GET: APIRoute = async () => {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error: any) {
+    console.error('🔥 Error en API /api/db-stats:', error);
     return new Response(
       JSON.stringify({ success: false, error: error.message, totalInDb: 0 }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   }
 };

@@ -8,7 +8,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!Array.isArray(questions) || questions.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'No se enviaron preguntas válidas' }),
+        JSON.stringify({ success: false, error: 'No se enviaron preguntas válidas' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -24,9 +24,12 @@ export const POST: APIRoute = async ({ request }) => {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error: any) {
-    console.error('Error al guardar preguntas en DB:', error);
+    console.error('🔥 Error en API /api/save-questions:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Error al conectar con la Base de Datos' }),
+      JSON.stringify({ 
+        success: false, 
+        error: error.message || 'Error al conectar o guardar en la Base de Datos' 
+      }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
