@@ -1,0 +1,663 @@
+---
+---
+
+<div class="extractor-app">
+  <!-- Upload Zone -->
+  <section class="upload-section">
+    <div class="dropzone" id="dropzone">
+      <div class="dropzone-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+      </div>
+      <h2 style="font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--text-main);">
+        Arrastra tus archivos HTML de simuladores aquí
+      </h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">
+        Carga tus cuestionarios HTML guardados para extraer las preguntas y guardarlas en la base de datos.
+      </p>
+      
+      <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+        <label class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+          Seleccionar Archivos HTML
+          <input type="file" id="fileInput" accept=".html,.htm" multiple style="display: none;" />
+        </label>
+
+        <button id="btnLoadSample" class="btn btn-secondary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"></path></svg>
+          Cargar archivo de ejemplo (contexto)
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Statistics Overview -->
+  <section class="stats-grid" id="statsGrid">
+    <div class="stat-card">
+      <div class="stat-header">
+        <span>Archivos Cargados</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+      </div>
+      <div class="stat-value" id="statFiles">0</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-header">
+        <span>Preguntas Extraídas en Pantalla</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      </div>
+      <div class="stat-value" id="statQuestions" style="color: var(--accent-primary);">0</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-header">
+        <span>Total en Base de Datos</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+      </div>
+      <div class="stat-value" id="statDbCount" style="color: #34d399; font-size: 1.8rem;">0</div>
+      <div style="font-size: 0.75rem; color: var(--text-dim);" id="statDbSub">Neon DB Conectado</div>
+    </div>
+  </section>
+
+  <!-- Simplified Action Toolbar -->
+  <section class="controls-bar" id="controlsBar">
+    <div class="search-wrapper">
+      <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input type="text" id="searchInput" class="search-input" placeholder="Buscar pregunta..." />
+    </div>
+
+    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+      <!-- Action 1: Save to Database -->
+      <button id="btnSaveToDb" class="btn btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 700;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+        Guardar en Base de Datos
+      </button>
+
+      <!-- Action 2: Download ALL stored questions from DB as PDF -->
+      <button id="btnDownloadDbPdf" class="btn btn-secondary" style="background: #3b82f6; color: #fff; border: none; font-weight: 700;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+        Descargar PDF de Estudio (Desde BD)
+      </button>
+
+      <!-- View mode toggle -->
+      <div style="background: var(--bg-primary); padding: 0.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); display: flex;">
+        <button id="btnViewTable" class="btn btn-sm btn-secondary" title="Vista Tabla">Tabla</button>
+        <button id="btnViewCards" class="btn btn-sm btn-outline" title="Vista Tarjetas">Tarjetas</button>
+      </div>
+
+      <button id="btnClearAll" class="btn btn-danger btn-sm">Limpiar Vista</button>
+    </div>
+  </section>
+
+  <!-- Empty State -->
+  <div id="emptyState" class="dropzone" style="cursor: default; background: var(--bg-card); border-style: solid; margin-bottom: 2rem;">
+    <div class="dropzone-icon" style="background: rgba(255, 255, 255, 0.05); color: var(--text-dim);">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+    </div>
+    <h3 style="color: var(--text-main); font-size: 1.1rem; margin-bottom: 0.5rem;">No hay preguntas en pantalla</h3>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">
+      Sube un archivo HTML arriba para extraer preguntas o haz clic en <strong>"Descargar PDF de Estudio (Desde BD)"</strong> para descargar todas las preguntas guardadas en la base de datos.
+    </p>
+  </div>
+
+  <!-- Data View: Table -->
+  <div id="tableViewContainer" class="table-container hidden">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 60px;">#</th>
+          <th>Pregunta Extraída</th>
+          <th>Respuesta Correcta</th>
+          <th>Archivo Origen</th>
+          <th style="width: 100px; text-align: center;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <!-- Dynamic rows -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Data View: Cards -->
+  <div id="cardsViewContainer" class="cards-grid hidden">
+    <!-- Dynamic cards -->
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="editModal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border-highlight); border-radius: var(--radius-md); max-width: 600px; width: 100%; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; box-shadow: var(--shadow-lg);">
+      <h3 style="color: var(--text-main); font-size: 1.2rem; display: flex; align-items: center; justify-content: space-between;">
+        <span>Editar Pregunta</span>
+        <button id="btnCloseModal" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem;">&times;</button>
+      </h3>
+      
+      <input type="hidden" id="editId" />
+
+      <div>
+        <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">
+          Texto de la Pregunta:
+        </label>
+        <textarea id="editQuestionText" rows="4" style="width: 100%; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.75rem; border-radius: var(--radius-sm); font-family: inherit; font-size: 0.9rem; resize: vertical;"></textarea>
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--success-color); margin-bottom: 0.4rem;">
+          Respuesta Correcta:
+        </label>
+        <textarea id="editAnswerText" rows="2" style="width: 100%; background: var(--bg-primary); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; padding: 0.75rem; border-radius: var(--radius-sm); font-family: inherit; font-size: 0.9rem; resize: vertical;"></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
+        <button id="btnCancelEdit" class="btn btn-outline">Cancelar</button>
+        <button id="btnSaveEdit" class="btn btn-primary">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DB Result Modal -->
+  <div id="dbResultModal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 600; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border-highlight); border-radius: var(--radius-md); max-width: 550px; width: 100%; padding: 1.75rem; display: flex; flex-direction: column; gap: 1.25rem; box-shadow: var(--shadow-lg);">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+          ✓
+        </div>
+        <div>
+          <h3 style="color: var(--text-main); font-size: 1.25rem; font-weight: 700;">Guardado en Base de Datos</h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">Conexión a Neon PostgreSQL verificada</p>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 1rem; border-radius: var(--radius-sm); text-align: center;">
+          <div style="font-size: 1.8rem; font-weight: 800; color: #34d399;" id="resInserted">0</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Preguntas Nuevas Guardadas</div>
+        </div>
+
+        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); padding: 1rem; border-radius: var(--radius-sm); text-align: center;">
+          <div style="font-size: 1.8rem; font-weight: 800; color: #fbbf24;" id="resSkipped">0</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Duplicados Omitidos</div>
+        </div>
+      </div>
+
+      <div style="background: var(--bg-primary); border: 1px solid var(--border-color); padding: 0.85rem; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: space-between;">
+        <span style="color: var(--text-muted); font-size: 0.9rem;">Total de preguntas en la Base de Datos:</span>
+        <strong style="color: var(--text-main); font-size: 1.1rem;" id="resTotalDb">0</strong>
+      </div>
+
+      <div id="duplicateDetails" class="hidden" style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.8rem; color: var(--text-muted);">
+        <strong>Detalle de preguntas omitidas por duplicación:</strong>
+        <ul id="duplicateList" style="margin-top: 0.4rem; padding-left: 1.2rem;"></ul>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end;">
+        <button id="btnCloseDbModal" class="btn btn-primary">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+</div>
+
+<script>
+  import { parseQuizHtml, type ExtractedQuestion } from '../utils/parser';
+  import { exportStudyPdf } from '../utils/pdfExporter';
+
+  let allQuestions: ExtractedQuestion[] = [];
+  let currentView: 'table' | 'cards' = 'table';
+  const loadedFiles = new Set<string>();
+
+  // DOM Elements
+  const dropzone = document.getElementById('dropzone')!;
+  const fileInput = document.getElementById('fileInput') as HTMLInputElement;
+  const btnLoadSample = document.getElementById('btnLoadSample')!;
+  const searchInput = document.getElementById('searchInput') as HTMLInputElement;
+  
+  const statFiles = document.getElementById('statFiles')!;
+  const statQuestions = document.getElementById('statQuestions')!;
+  const statDbCount = document.getElementById('statDbCount')!;
+  const statDbSub = document.getElementById('statDbSub')!;
+
+  const btnSaveToDb = document.getElementById('btnSaveToDb')!;
+  const btnDownloadDbPdf = document.getElementById('btnDownloadDbPdf')!;
+
+  const btnViewTable = document.getElementById('btnViewTable')!;
+  const btnViewCards = document.getElementById('btnViewCards')!;
+  const btnClearAll = document.getElementById('btnClearAll')!;
+
+  const emptyState = document.getElementById('emptyState')!;
+  const tableViewContainer = document.getElementById('tableViewContainer')!;
+  const cardsViewContainer = document.getElementById('cardsViewContainer')!;
+  const tableBody = document.getElementById('tableBody')!;
+
+  const editModal = document.getElementById('editModal')!;
+  const editId = document.getElementById('editId') as HTMLInputElement;
+  const editQuestionText = document.getElementById('editQuestionText') as HTMLTextAreaElement;
+  const editAnswerText = document.getElementById('editAnswerText') as HTMLTextAreaElement;
+  const btnCloseModal = document.getElementById('btnCloseModal')!;
+  const btnCancelEdit = document.getElementById('btnCancelEdit')!;
+  const btnSaveEdit = document.getElementById('btnSaveEdit')!;
+
+  const dbResultModal = document.getElementById('dbResultModal')!;
+  const resInserted = document.getElementById('resInserted')!;
+  const resSkipped = document.getElementById('resSkipped')!;
+  const resTotalDb = document.getElementById('resTotalDb')!;
+  const duplicateDetails = document.getElementById('duplicateDetails')!;
+  const duplicateList = document.getElementById('duplicateList')!;
+  const btnCloseDbModal = document.getElementById('btnCloseDbModal')!;
+
+  // Fetch initial DB count on load
+  async function fetchDbStats() {
+    try {
+      const res = await fetch('/api/db-stats');
+      const data = await res.json();
+      if (data.success) {
+        statDbCount.textContent = data.totalInDb.toString();
+        statDbSub.textContent = 'Neon DB Conectado';
+        statDbSub.style.color = '#34d399';
+      } else {
+        statDbSub.textContent = 'Error de conexión';
+        statDbSub.style.color = '#ef4444';
+      }
+    } catch {
+      statDbSub.textContent = 'Servidor Local';
+    }
+  }
+  fetchDbStats();
+
+  // Drag and Drop
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+  });
+
+  dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('dragover');
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    if (e.dataTransfer?.files) {
+      handleFiles(Array.from(e.dataTransfer.files));
+    }
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    const files = (e.target as HTMLInputElement).files;
+    if (files) {
+      handleFiles(Array.from(files));
+    }
+  });
+
+  // Load sample file
+  btnLoadSample.addEventListener('click', async () => {
+    try {
+      showToast('Cargando cuestionario de prueba...', 'info');
+      const response = await fetch('/sample-caces.html');
+      if (!response.ok) throw new Error('No se pudo cargar el archivo de ejemplo');
+      const htmlText = await response.text();
+      
+      const fileName = 'Resultados del cuestionario _ ecuadorpreguntas.html';
+      const extracted = parseQuizHtml(htmlText, fileName);
+
+      if (extracted.length > 0) {
+        loadedFiles.add(fileName);
+        allQuestions = [...allQuestions, ...extracted];
+        renderApp();
+        showToast(`¡Éxito! Se extrajeron ${extracted.length} preguntas del cuestionario de prueba.`, 'success');
+      } else {
+        showToast('No se pudieron encontrar preguntas en el archivo de ejemplo.', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Error al cargar ejemplo', 'error');
+    }
+  });
+
+  function handleFiles(files: File[]) {
+    const htmlFiles = files.filter(f => f.name.endsWith('.html') || f.name.endsWith('.htm'));
+    if (htmlFiles.length === 0) {
+      showToast('Por favor selecciona archivos con extensión .html o .htm', 'warning');
+      return;
+    }
+
+    let totalExtractedNew = 0;
+    let pendingCount = htmlFiles.length;
+
+    htmlFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        if (content) {
+          const extracted = parseQuizHtml(content, file.name);
+          if (extracted.length > 0) {
+            loadedFiles.add(file.name);
+            allQuestions = [...allQuestions, ...extracted];
+            totalExtractedNew += extracted.length;
+          }
+        }
+        pendingCount--;
+        if (pendingCount === 0) {
+          renderApp();
+          if (totalExtractedNew > 0) {
+            showToast(`Se extrajeron ${totalExtractedNew} preguntas de ${htmlFiles.length} archivo(s).`, 'success');
+          } else {
+            showToast('No se encontraron preguntas en los archivos HTML cargados.', 'warning');
+          }
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  // Action 1: Save to Database
+  btnSaveToDb.addEventListener('click', async () => {
+    if (allQuestions.length === 0) {
+      showToast('No hay preguntas en pantalla para guardar en la base de datos.', 'warning');
+      return;
+    }
+
+    btnSaveToDb.setAttribute('disabled', 'true');
+    btnSaveToDb.innerHTML = `Guardando...`;
+
+    try {
+      const payload = {
+        questions: allQuestions.map(q => ({
+          question: q.question,
+          correctAnswer: q.correctAnswer,
+          sourceFile: q.sourceFile
+        }))
+      };
+
+      const res = await fetch('/api/save-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Error al guardar en la base de datos');
+      }
+
+      statDbCount.textContent = data.totalInDb.toString();
+      resInserted.textContent = data.insertedCount.toString();
+      resSkipped.textContent = data.skippedCount.toString();
+      resTotalDb.textContent = data.totalInDb.toString();
+
+      if (data.skippedItems && data.skippedItems.length > 0) {
+        duplicateDetails.classList.remove('hidden');
+        duplicateList.innerHTML = data.skippedItems.map((item: any) => 
+          `<li>${escapeHtml(item.question.substring(0, 70))}...</li>`
+        ).join('');
+      } else {
+        duplicateDetails.classList.add('hidden');
+      }
+
+      dbResultModal.classList.remove('hidden');
+      showToast(`Base de datos actualizada: +${data.insertedCount} preguntas nuevas`, 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Error al guardar en la base de datos', 'error');
+    } finally {
+      btnSaveToDb.removeAttribute('disabled');
+      btnSaveToDb.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+        Guardar en Base de Datos
+      `;
+    }
+  });
+
+  // Action 2: Download PDF of ALL questions stored in Neon DB
+  btnDownloadDbPdf.addEventListener('click', async () => {
+    btnDownloadDbPdf.setAttribute('disabled', 'true');
+    btnDownloadDbPdf.innerHTML = `Obteniendo preguntas de BD...`;
+    showToast('Consultando todas las preguntas en Neon DB...', 'info');
+
+    try {
+      const res = await fetch('/api/all-questions');
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'No se pudieron consultar las preguntas de la base de datos');
+      }
+
+      if (data.count === 0) {
+        showToast('La base de datos está vacía. Guarda preguntas primero para poder generar el PDF.', 'warning');
+        return;
+      }
+
+      showToast(`Generando PDF de estudio con las ${data.count} preguntas de la BD...`, 'info');
+      
+      const formattedForPdf: ExtractedQuestion[] = data.questions.map((q: any, idx: number) => ({
+        id: `db-${idx}`,
+        questionNumber: idx + 1,
+        question: q.question,
+        correctAnswer: q.correctAnswer,
+        sourceFile: q.sourceFile
+      }));
+
+      exportStudyPdf(formattedForPdf);
+      showToast(`¡PDF generado exitosamente con ${data.count} preguntas!`, 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Error al generar PDF desde la base de datos', 'error');
+    } finally {
+      btnDownloadDbPdf.removeAttribute('disabled');
+      btnDownloadDbPdf.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+        Descargar PDF de Estudio (Desde BD)
+      `;
+    }
+  });
+
+  btnCloseDbModal.addEventListener('click', () => {
+    dbResultModal.classList.add('hidden');
+  });
+
+  // Search filter
+  searchInput.addEventListener('input', () => {
+    renderApp();
+  });
+
+  // Toggle View Modes
+  btnViewTable.addEventListener('click', () => {
+    currentView = 'table';
+    btnViewTable.className = 'btn btn-sm btn-secondary';
+    btnViewCards.className = 'btn btn-sm btn-outline';
+    renderApp();
+  });
+
+  btnViewCards.addEventListener('click', () => {
+    currentView = 'cards';
+    btnViewCards.className = 'btn btn-sm btn-secondary';
+    btnViewTable.className = 'btn btn-sm btn-outline';
+    renderApp();
+  });
+
+  // Clear
+  btnClearAll.addEventListener('click', () => {
+    if (allQuestions.length === 0) return;
+    allQuestions = [];
+    loadedFiles.clear();
+    renderApp();
+    showToast('Se han limpiado las preguntas de la pantalla.', 'info');
+  });
+
+  // Modal logic
+  btnCloseModal.addEventListener('click', closeModal);
+  btnCancelEdit.addEventListener('click', closeModal);
+  
+  btnSaveEdit.addEventListener('click', () => {
+    const id = editId.value;
+    const item = allQuestions.find(q => q.id === id);
+    if (item) {
+      item.question = editQuestionText.value.trim();
+      item.correctAnswer = editAnswerText.value.trim();
+      renderApp();
+      closeModal();
+      showToast('Pregunta actualizada correctamente', 'success');
+    }
+  });
+
+  function openEditModal(q: ExtractedQuestion) {
+    editId.value = q.id;
+    editQuestionText.value = q.question;
+    editAnswerText.value = q.correctAnswer;
+    editModal.classList.remove('hidden');
+  }
+
+  function closeModal() {
+    editModal.classList.add('hidden');
+  }
+
+  function getFilteredQuestions(): ExtractedQuestion[] {
+    const query = searchInput.value.toLowerCase().trim();
+    if (!query) return allQuestions;
+    return allQuestions.filter(q => 
+      q.question.toLowerCase().includes(query) || 
+      q.correctAnswer.toLowerCase().includes(query)
+    );
+  }
+
+  function renderApp() {
+    const filtered = getFilteredQuestions();
+
+    statFiles.textContent = loadedFiles.size.toString();
+    statQuestions.textContent = allQuestions.length.toString();
+
+    if (allQuestions.length > 0) {
+      emptyState.classList.add('hidden');
+    } else {
+      emptyState.classList.remove('hidden');
+      tableViewContainer.classList.add('hidden');
+      cardsViewContainer.classList.add('hidden');
+      return;
+    }
+
+    if (currentView === 'table') {
+      cardsViewContainer.classList.add('hidden');
+      tableViewContainer.classList.remove('hidden');
+      renderTable(filtered);
+    } else {
+      tableViewContainer.classList.add('hidden');
+      cardsViewContainer.classList.remove('hidden');
+      renderCards(filtered);
+    }
+  }
+
+  function renderTable(questions: ExtractedQuestion[]) {
+    tableBody.innerHTML = '';
+    
+    if (questions.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">No hay resultados que coincidan con la búsqueda.</td></tr>`;
+      return;
+    }
+
+    questions.forEach((q, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight: 700; color: var(--text-dim);">${idx + 1}</td>
+        <td class="question-cell">${escapeHtml(q.question)}</td>
+        <td>
+          <span class="answer-cell">${escapeHtml(q.correctAnswer)}</span>
+        </td>
+        <td style="color: var(--text-muted); font-size: 0.8rem;">${escapeHtml(q.sourceFile)}</td>
+        <td>
+          <div style="display: flex; gap: 0.4rem; justify-content: center;">
+            <button class="btn btn-sm btn-secondary btn-edit-one" data-id="${q.id}" title="Editar">Editar</button>
+            <button class="btn btn-sm btn-danger btn-delete-one" data-id="${q.id}" title="Eliminar">&times;</button>
+          </div>
+        </td>
+      `;
+
+      tr.querySelector('.btn-edit-one')?.addEventListener('click', () => {
+        openEditModal(q);
+      });
+
+      tr.querySelector('.btn-delete-one')?.addEventListener('click', () => {
+        allQuestions = allQuestions.filter(item => item.id !== q.id);
+        renderApp();
+        showToast('Pregunta eliminada de la vista', 'info');
+      });
+
+      tableBody.appendChild(tr);
+    });
+  }
+
+  function renderCards(questions: ExtractedQuestion[]) {
+    cardsViewContainer.innerHTML = '';
+
+    if (questions.length === 0) {
+      cardsViewContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2rem;">No hay resultados que coincidan con la búsqueda.</div>`;
+      return;
+    }
+
+    questions.forEach((q, idx) => {
+      const card = document.createElement('div');
+      card.className = 'question-card';
+      card.innerHTML = `
+        <div class="question-card-header">
+          <span style="font-weight: 700; color: var(--accent-primary);">Pregunta #${idx + 1}</span>
+          <span class="badge-tag" style="font-size: 0.7rem;">${escapeHtml(q.sourceFile)}</span>
+        </div>
+
+        <div class="question-card-body">
+          ${escapeHtml(q.question)}
+        </div>
+
+        <div class="question-card-answer">
+          <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--success-color); margin-bottom: 0.2rem;">
+            Respuesta Correcta:
+          </div>
+          ${escapeHtml(q.correctAnswer)}
+        </div>
+
+        <div class="question-card-footer">
+          <button class="btn btn-sm btn-secondary btn-edit-card">Editar</button>
+          <button class="btn btn-sm btn-danger btn-delete-card">Eliminar</button>
+        </div>
+      `;
+
+      card.querySelector('.btn-edit-card')?.addEventListener('click', () => {
+        openEditModal(q);
+      });
+
+      card.querySelector('.btn-delete-card')?.addEventListener('click', () => {
+        allQuestions = allQuestions.filter(item => item.id !== q.id);
+        renderApp();
+        showToast('Pregunta eliminada de la vista', 'info');
+      });
+
+      cardsViewContainer.appendChild(card);
+    });
+  }
+
+  function showToast(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') {
+    const toastContainer = document.getElementById('toastContainer')!;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+
+    let iconColor = 'var(--accent-primary)';
+    if (type === 'success') iconColor = 'var(--success-color)';
+    if (type === 'error') iconColor = 'var(--danger-color)';
+    if (type === 'warning') iconColor = 'var(--warning-color)';
+
+    toast.innerHTML = `
+      <span style="color: ${iconColor}; font-weight: 700;">●</span>
+      <span>${escapeHtml(message)}</span>
+    `;
+
+    toastContainer.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 4000);
+  }
+
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+</script>

@@ -1,0 +1,22 @@
+{
+  "name": "astro-scannerquiz",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.2",
+    "@astrojs/vercel": "^11.0.5",
+    "astro": "^7.2.2",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "postgres": "^3.4.9"
+  }
+}
